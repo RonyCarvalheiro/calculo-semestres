@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cálculo de Datas de Semestres</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        label {
+            display: block;
+            margin: 10px 0 5px;
+        }
+        input, button {
+            padding: 5px;
+            font-size: 16px;
+        }
+        button {
+            margin-top: 10px;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+        li {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Cálculo de Datas de Semestres</h1>
+    <label for="ano">Ano:</label>
+    <input type="number" id="ano" placeholder="Ex: 2024" />
+
+    <label for="dataInicio">Data de Início:</label>
+    <input type="date" id="dataInicio" />
+
+    <button onclick="calcularData()">Calcular Datas</button>
+
+    <h2>Resultados</h2>
+    <p><strong>Data Final do Curso:</strong> <span id="dataTermino">-</span></p>
+    <p><strong>Fim do 1º Semestre:</strong> <span id="semestre1">-</span></p>
+    <p><strong>Fim do 2º Semestre:</strong> <span id="semestre2">-</span></p>
+    <p><strong>Fim do 3º Semestre:</strong> <span id="semestre3">-</span></p>
+
+    <h2>Feriados Considerados</h2>
+    <ul id="feriadosLista"></ul>
+
+    <script>
+        function calcularPascoa(ano) {
+            const a = ano % 19;
+            const b = Math.floor(ano / 100);
+            const c = ano % 100;
+            const d = Math.floor(b / 4);
+            const e = b % 4;
+            const f = Math.floor((b + 8) / 25);
+            const g = Math.floor((b - f + 1) / 3);
+            const h = (19 * a + b - d - g + 15) % 30;
+            const i = Math.floor(c / 4);
+            const k = c % 4;
+            const l = (32 + 2 * e + 2 * i - h - k) % 7;
+            const m = Math.floor((a + 11 * h + 22 * l) / 451);
+            const mes = Math.floor((h + l - 7 * m + 114) / 31);
+            const dia = ((h + l - 7 * m + 114) % 31) + 1;
+            return new Date(ano, mes - 1, dia);
+        }
+
+        function obterFeriados(ano) {
+            const pascoa = calcularPascoa(ano);
+            const carnaval = new Date(pascoa);
+            carnaval.setDate(pascoa.getDate() - 47);
+            const sextaFeiraSanta = new Date(pascoa);
+            sextaFeiraSanta.setDate(pascoa.getDate() - 2);
+            const corpusChristi = new Date(pascoa);
+            corpusChristi.setDate(pascoa.getDate() + 60);
+
+            return [
+                `${ano}-01-01`, // Confraternização Universal
+                carnaval.toISOString().split("T")[0],
+                sextaFeiraSanta.toISOString().split("T")[0],
+                `${ano}-04-21`, // Tiradentes
+                `${ano}-05-01`, // Dia do Trabalho
+                corpusChristi.toISOString().split("T")[0],
+                `${ano}-09-07`, // Independência do Brasil
+                `${ano}-10-12`, // Nossa Senhora Aparecida
+                `${ano}-11-02`, // Finados
+                `${ano}-11-15`, // Proclamação da República
+                `${ano}-12-25`  // Natal
+            ];
+        }
+
+        function exibirFeriados(feriados) {
+            const feriadosLista = document.getElementById("feriadosLista");
+            feriadosLista.innerHTML = "";
+            feriados.forEach(data => {
+                const li = document.createElement("li");
+                li.textContent = new Date(data).toLocaleDateString("pt-BR");
+                feriadosLista.appendChild(li);
+            });
+        }
+
+        function calcularData() {
+            const ano = document.getElementById("ano").value;
+            const dataInicioInput = document.getElementById("dataInicio").value;
+
+            if (!ano || !dataInicioInput) {
+                alert("Por favor, insira o ano e a data de início.");
+                return;
+            }
+
+            const feriados = obterFeriados(ano);
+            exibirFeriados(feriados);
+
+            const dataInicio = new Date(dataInicioInput);
+            let semanasPorSemestre = 26;
+            let semanasTotais = 78;
+
+            let dataAtual = new Date(dataInicio);
+            let aulasRestantes = semanasTotais;
+            let semestreDatas = [];
+
+            while (aulasRestantes > 0) {
+                dataAtual.setDate(dataAtual.getDate() + 7);
+                const dataAtualStr = dataAtual.toISOString().split("T")[0];
+                if (!feriados.includes(dataAtualStr)) {
+                    aulasRestantes--;
+                    if ((semanasTotais - aulasRestantes) % semanasPorSemestre === 0) {
+                        semestreDatas.push(new Date(dataAtual));
+                    }
+                }
+            }
+
+            document.getElementById("dataTermino").textContent = dataAtual.toLocaleDateString("pt-BR");
+            document.getElementById("semestre1").textContent = semestreDatas[0]?.toLocaleDateString("pt-BR") || "-";
+            document.getElementById("semestre2").textContent = semestreDatas[1]?.toLocaleDateString("pt-BR") || "-";
+            document.getElementById("semestre3").textContent = dataAtual.toLocaleDateString("pt-BR");
+        }
+    </script>
+</body>
+</html>
